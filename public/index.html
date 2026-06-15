@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Astra</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #f9f9f8;
+      color: #1a1a1a;
+      font-family: 'Inter', sans-serif;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: 260px;
+      min-width: 260px;
+      background: #fff;
+      border-right: 1px solid #e8e8e8;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo { display: flex; align-items: center; gap: 8px; }
+
+    .logo-dot {
+      width: 7px; height: 7px;
+      background: #6c5ce7;
+      border-radius: 50%;
+      animation: pulse 2.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .logo h1 { font-size: 14px; font-weight: 700; letter-spacing: 3px; color: #111; }
+
+    .new-chat-btn {
+      background: #6c5ce7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: opacity 0.2s;
+    }
+
+    .new-chat-btn:hover { opacity: 0.85; }
+
+    .search-box {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .search-input {
+      width: 100%;
+      background: #f5f5f5;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      color: #1a1a1a;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus { border-color: #6c5ce7; background: #fff; }
+    .search-input::placeholder { color: #bbb; }
+
+    .sidebar-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #999;
+      letter-spacing: 0.8px;
+      padding: 12px 16px 4px;
+      text-transform: uppercase;
+    }
+
+    #chat-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 4px 8px;
+      scrollbar-width: thin;
+      scrollbar-color: #eee transparent;
+    }
+
+    .chat-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+      gap: 6px;
+      position: relative;
+    }
+
+    .chat-item:hover { background: #f5f5f5; }
+    .chat-item.active { background: #f0eeff; }
+
+    .chat-item-info { flex: 1; overflow: hidden; }
+
+    .chat-item-title {
+      font-size: 13px;
+      color: #222;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-item.active .chat-item-title { color: #6c5ce7; }
+
+    .chat-item-date { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+    /* 3 dots button */
+    .dots-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #bbb;
+      font-size: 16px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      opacity: 0;
+      transition: all 0.15s;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .chat-item:hover .dots-btn { opacity: 1; }
+    .chat-item.active .dots-btn { opacity: 1; }
+    .dots-btn:hover { background: #e8e8e8; color: #444; }
+
+    /* Dropdown menu */
+    .dots-menu {
+      position: fixed;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      padding: 4px;
+      z-index: 1000;
+      min-width: 140px;
+      display: none;
+    }
+
+    .dots-menu.show { display: block; }
+
+    .dots-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #333;
+      font-weight: 500;
+      transition: background 0.15s;
+      border: none;
+      background: none;
+      font-family: 'Inter', sans-serif;
+      width: 100%;
+      text-align: left;
+    }
+
+    .dots-menu-item:hover { background: #f5f5f5; }
+    .dots-menu-item.danger { color: #dc2626; }
+    .dots-menu-item.danger:hover { background: #fff0f0; }
+
+    .sidebar-footer {
+      padding: 12px 16px;
+      border-top: 1px solid #f0f0f0;
+      font-size: 11px;
+      color: #bbb;
+      text-align: center;
+    }
+
+    .no-results { padding: 16px; font-size: 12px; color: #bbb; text-align: center; }
+
+    /* ── MAIN ── */
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #chat-box {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      scrollbar-width: thin;
+      scrollbar-color: #ddd transparent;
+    }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding-bottom: 80px;
+    }
+
+    .empty-state .star { font-size: 32px; color: #6c5ce7; }
+    .empty-state h2 { font-size: 20px; font-weight: 600; color: #222; }
+    .empty-state p { font-size: 13px; color: #888; }
+
+    .message-wrap { display: flex; flex-direction: column; gap: 5px; width: 100%; }
+    .message-wrap.user { align-items: flex-end; }
+    .message-wrap.assistant { align-items: flex-start; }
+
+    .sender { font-size: 12px; color: #333; font-weight: 600; padding: 0 6px; }
+
+    .message {
+      padding: 13px 17px;
+      border-radius: 16px;
+      line-height: 1.75;
+      font-size: 14.5px;
+      font-weight: 400;
+      word-break: break-word;
+    }
+
+    .user .message {
+      background: #6c5ce7;
+      color: #fff;
+      border-bottom-right-radius: 4px;
+      max-width: min(75%, 600px);
+    }
+
+    .assistant .message {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      color: #1a1a1a;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      width: 100%;
+    }
+
+    .assistant .message p { margin-bottom: 10px; color: #1a1a1a; }
+    .assistant .message p:last-child { margin-bottom: 0; }
+    .assistant .message strong { color: #111; font-weight: 600; }
+    .assistant .message ul, .assistant .message ol { padding-left: 20px; margin: 6px 0 10px; }
+    .assistant .message li { margin-bottom: 5px; color: #1a1a1a; }
+    .assistant .message h1, .assistant .message h2, .assistant .message h3 {
+      font-size: 15px; font-weight: 600; color: #111; margin: 14px 0 6px;
+    }
+
+    pre {
+      background: #f4f4f4;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 14px;
+      overflow-x: auto;
+      margin: 10px 0;
+    }
+
+    code { font-family: 'Courier New', monospace; font-size: 13px; color: #6c5ce7; }
+    p > code { background: #f0eeff; padding: 2px 6px; border-radius: 4px; font-size: 12.5px; color: #6c5ce7; }
+
+    .actions {
+      display: flex;
+      gap: 6px;
+      padding: 2px 6px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      flex-wrap: wrap;
+    }
+
+    .message-wrap.assistant:hover .actions { opacity: 1; }
+
+    .action-btn {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 5px 11px;
+      font-size: 12px;
+      color: #444;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    .action-btn:hover { border-color: #6c5ce7; color: #6c5ce7; background: #f0eeff; }
+    .action-btn.liked { color: #16a34a; border-color: #16a34a; background: #f0fff4; }
+    .action-btn.disliked { color: #dc2626; border-color: #dc2626; background: #fff0f0; }
+    .action-btn.copied { color: #6c5ce7; border-color: #6c5ce7; background: #f0eeff; }
+
+    .typing-wrap { display: flex; align-items: flex-start; }
+
+    .typing-dots {
+      display: flex;
+      gap: 5px;
+      padding: 14px 18px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+
+    .typing-dots span {
+      width: 6px; height: 6px; background: #bbb;
+      border-radius: 50%; animation: bounce 1.2s infinite;
+    }
+
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); background: #bbb; }
+      30% { transform: translateY(-6px); background: #6c5ce7; }
+    }
+
+    /* ── INPUT ── */
+    #input-area {
+      padding: 12px 24px 20px;
+      border-top: 1px solid #e8e8e8;
+      background: #f9f9f8;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      position: relative;
+    }
+
+    .extra-btn {
+      background: #fff;
+      border: 1.5px solid #ddd;
+      border-radius: 10px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .extra-btn:hover { border-color: #6c5ce7; background: #f0eeff; }
+
+    .extra-btn.recording {
+      border-color: #ef4444;
+      background: #fff0f0;
+      animation: recording-pulse 1s infinite;
+    }
+
+    @keyframes recording-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 #ef444430; }
+      50% { box-shadow: 0 0 0 6px #ef444410; }
+    }
+
+    .input-box {
+      flex: 1;
+      display: flex;
+      gap: 8px;
+      background: #fff;
+      border: 1.5px solid #ddd;
+      border-radius: 14px;
+      padding: 8px 8px 8px 16px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .input-box:focus-within {
+      border-color: #6c5ce7;
+      box-shadow: 0 0 0 3px #6c5ce720;
+    }
+
+    #user-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #1a1a1a;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      padding: 6px 0;
+    }
+
+    #user-input::placeholder { color: #999; }
+
+    .send-btn {
+      background: #6c5ce7;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 18px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: opacity 0.2s;
+    }
+
+    .send-btn:hover { opacity: 0.85; }
+
+    .footer-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 4px;
+    }
+
+    .hint { font-size: 12px; color: #666; font-weight: 500; }
+
+    /* Plus menu */
+    .plus-menu {
+      position: absolute;
+      bottom: 52px;
+      left: 0;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      padding: 6px;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      z-index: 100;
+      min-width: 170px;
+    }
+
+    .plus-menu.show { display: flex; }
+
+    .plus-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #333;
+      font-weight: 500;
+      transition: background 0.15s;
+      border: none;
+      background: none;
+      font-family: 'Inter', sans-serif;
+      width: 100%;
+      text-align: left;
+    }
+
+    .plus-menu-item:hover { background: #f5f5f5; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: #111;
+      color: #fff;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.25s;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 600px) {
+      #sidebar { display: none; }
+      #chat-box { padding: 16px; }
+      #input-area { padding: 10px 16px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-dot"></div>
+        <h1>ASTRA</h1>
+      </div>
+      <button class="new-chat-btn" onclick="newChat()">+ New</button>
+    </div>
+
+    <div class="search-box">
+      <input class="search-input" id="search-input" type="text"
+        placeholder="🔍 Search chats..." oninput="searchChats(this.value)"/>
+    </div>
+
+    <div class="sidebar-label">Recent Chats</div>
+    <div id="chat-list"></div>
+    <div class="sidebar-footer">Personal AI · Built for India 🇮🇳</div>
+  </div>
+
+  <!-- DOTS DROPDOWN MENU (single, reused) -->
+  <div class="dots-menu" id="dots-menu">
+    <button class="dots-menu-item" onclick="dotsAction('rename')">✏️ Rename</button>
+    <button class="dots-menu-item" onclick="dotsAction('pin')">📌 Pin / Unpin</button>
+    <button class="dots-menu-item danger" onclick="dotsAction('delete')">🗑️ Delete</button>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div id="chat-box">
+      <div class="empty-state" id="empty">
+        <span class="star">✦</span>
+        <h2>Hi, I'm Astra</h2>
+        <p>Your personal AI companion. Ask me anything.</p>
+      </div>
+    </div>
+
+    <div id="input-area">
+      <div class="input-row">
+        <button class="extra-btn" onclick="togglePlusMenu()" id="plus-btn" title="More">➕</button>
+        <div class="input-box">
+          <input id="user-input" type="text" placeholder="Message Astra..." autocomplete="off"/>
+          <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+        <button class="extra-btn" id="mic-btn" onclick="toggleSTT()" title="Voice">🎤</button>
+
+        <div class="plus-menu" id="plus-menu">
+          <button class="plus-menu-item" onclick="handleAttach('image')">🖼️ Upload Image</button>
+          <button class="plus-menu-item" onclick="handleAttach('file')">📄 Upload File</button>
+          <button class="plus-menu-item" onclick="handleAttach('code')">💻 Share Code</button>
+        </div>
+      </div>
+
+      <div class="footer-row">
+        <span class="hint">Press Enter to send · 🎤 voice input</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    marked.setOptions({ breaks: true, gfm: true });
+
+    const chatBox = document.getElementById('chat-box');
+    const input = document.getElementById('user-input');
+    const toast = document.getElementById('toast');
+    const chatList = document.getElementById('chat-list');
+
+    let currentChatId = null;
+    let allChats = [];
+    let activeDotsChatId = null;
+
+    input.addEventListener('keypress', e => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    // ── TOAST ─────────────────────────────────────
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    // ── DATE ──────────────────────────────────────
+    function formatDate(iso) {
+      const d = new Date(iso);
+      const diff = Date.now() - d;
+      if (diff < 86400000) return 'Today';
+      if (diff < 172800000) return 'Yesterday';
+      return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    }
+
+    // ── CHAT LIST ─────────────────────────────────
+    async function loadChatList() {
+      const res = await fetch('/chats');
+      allChats = await res.json();
+      renderChatList(allChats);
+    }
+
+    function renderChatList(chats) {
+      chatList.innerHTML = '';
+      if (chats.length === 0) {
+        chatList.innerHTML = '<div class="no-results">No chats found</div>';
+        return;
+      }
+
+      const pinned = chats.filter(c => c.pinned);
+      const unpinned = chats.filter(c => !c.pinned);
+
+      if (pinned.length > 0) {
+        const pl = document.createElement('div');
+        pl.className = 'sidebar-label';
+        pl.textContent = '📌 Pinned';
+        chatList.appendChild(pl);
+        pinned.forEach(c => chatList.appendChild(createChatItem(c)));
+
+        if (unpinned.length > 0) {
+          const rl = document.createElement('div');
+          rl.className = 'sidebar-label';
+          rl.textContent = 'Recent';
+          chatList.appendChild(rl);
+        }
+      }
+
+      unpinned.forEach(c => chatList.appendChild(createChatItem(c)));
+    }
+
+    function createChatItem(chat) {
+      const item = document.createElement('div');
+      item.className = `chat-item ${chat.id === currentChatId ? 'active' : ''}`;
+      item.dataset.id = chat.id;
+      item.innerHTML = `
+        <div class="chat-item-info">
+          <div class="chat-item-title">${chat.pinned ? '📌 ' : ''}${chat.title}</div>
+          <div class="chat-item-date">${formatDate(chat.createdAt)} · ${chat.messageCount} msgs</div>
+        </div>
+        <button class="dots-btn" onclick="openDotsMenu(event, '${chat.id}')">⋯</button>
+      `;
+      item.querySelector('.chat-item-info').addEventListener('click', () => openChat(chat.id));
+      return item;
+    }
+
+    function searchChats(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) { renderChatList(allChats); return; }
+      renderChatList(allChats.filter(c => c.title.toLowerCase().includes(q)));
+    }
+
+    // ── DOTS MENU ─────────────────────────────────
+    function openDotsMenu(e, chatId) {
+      e.stopPropagation();
+      activeDotsChatId = chatId;
+      const menu = document.getElementById('dots-menu');
+      menu.classList.add('show');
+
+      // Position near the button
+      const rect = e.target.getBoundingClientRect();
+      menu.style.top = `${rect.bottom + 4}px`;
+      menu.style.left = `${rect.left - 100}px`;
+    }
+
+    async function dotsAction(action) {
+      const menu = document.getElementById('dots-menu');
+      menu.classList.remove('show');
+      const chatId = activeDotsChatId;
+      if (!chatId) return;
+
+      if (action === 'rename') {
+        const newTitle = prompt('Enter new chat name:');
+        if (!newTitle || !newTitle.trim()) return;
+        await fetch(`/chats/${chatId}/rename`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: newTitle.trim() })
+        });
+        showToast('Renamed ✓');
+        await loadChatList();
+      }
+
+      if (action === 'pin') {
+        const res = await fetch(`/chats/${chatId}/pin`, { method: 'PATCH' });
+        const data = await res.json();
+        showToast(data.pinned ? 'Pinned 📌' : 'Unpinned');
+        await loadChatList();
+      }
+
+      if (action === 'delete') {
+        await fetch(`/chats/${chatId}`, { method: 'DELETE' });
+        if (currentChatId === chatId) {
+          currentChatId = null;
+          chatBox.innerHTML = `
+            <div class="empty-state" id="empty">
+              <span class="star">✦</span>
+              <h2>Hi, I'm Astra</h2>
+              <p>Your personal AI companion. Ask me anything.</p>
+            </div>`;
+        }
+        showToast('Deleted');
+        await loadChatList();
+      }
+    }
+
+    // Close dots menu on outside click
+    document.addEventListener('click', e => {
+      const menu = document.getElementById('dots-menu');
+      if (!menu.contains(e.target)) menu.classList.remove('show');
+    });
+
+    // ── CHAT ACTIONS ──────────────────────────────
+    async function newChat() {
+      const res = await fetch('/chats/new', { method: 'POST' });
+      const data = await res.json();
+      currentChatId = data.id;
+      chatBox.innerHTML = `
+        <div class="empty-state" id="empty">
+          <span class="star">✦</span>
+          <h2>Hi, I'm Astra</h2>
+          <p>Your personal AI companion. Ask me anything.</p>
+        </div>`;
+      await loadChatList();
+      input.focus();
+    }
+
+    async function openChat(chatId) {
+      currentChatId = chatId;
+      const res = await fetch(`/chats/${chatId}`);
+      const chat = await res.json();
+      chatBox.innerHTML = '';
+
+      if (chat.messages.length === 0) {
+        chatBox.innerHTML = `
+          <div class="empty-state" id="empty">
+            <span class="star">✦</span>
+            <h2>Hi, I'm Astra</h2>
+            <p>Your personal AI companion. Ask me anything.</p>
+          </div>`;
+      } else {
+        chat.messages.forEach(msg => renderMessage(msg.content, msg.role, false));
+      }
+
+      await loadChatList();
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // ── RENDER MESSAGE ────────────────────────────
+    function renderMessage(content, role, animate = true) {
+      const emptyEl = document.getElementById('empty');
+      if (emptyEl) emptyEl.remove();
+
+      const wrap = document.createElement('div');
+      wrap.className = `message-wrap ${role}`;
+
+      const sender = document.createElement('div');
+      sender.className = 'sender';
+      sender.textContent = role === 'user' ? 'You' : 'Astra';
+
+      const div = document.createElement('div');
+      div.className = 'message';
+
+      wrap.appendChild(sender);
+      wrap.appendChild(div);
+      chatBox.appendChild(wrap);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      if (role === 'assistant' && animate) {
+        const words = content.split(' ');
+        let i = 0, built = '';
+        const interval = setInterval(() => {
+          if (i < words.length) {
+            built += (i === 0 ? '' : ' ') + words[i];
+            div.innerHTML = marked.parse(built);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            i++;
+          } else {
+            clearInterval(interval);
+            div.innerHTML = marked.parse(content);
+            addActions(wrap, content);
+          }
+        }, 25);
+      } else {
+        if (role === 'assistant') {
+          div.innerHTML = marked.parse(content);
+          addActions(wrap, content);
+        } else {
+          div.textContent = content;
+        }
+      }
+    }
+
+    function addActions(wrap, content) {
+      const safeContent = content.replace(/'/g, "\\'").replace(/\n/g, '\\n');
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      actions.innerHTML = `
+        <button class="action-btn" onclick="copyMsg(this, '${safeContent}')">📋 Copy</button>
+        <button class="action-btn" onclick="likeMsg(this)">👍 Helpful</button>
+        <button class="action-btn" onclick="dislikeMsg(this)">👎 Not helpful</button>
+      `;
+      wrap.appendChild(actions);
+    }
+
+    function copyMsg(btn, content) {
+      navigator.clipboard.writeText(content.replace(/\\n/g, '\n')).then(() => {
+        btn.classList.add('copied');
+        btn.textContent = '✓ Copied';
+        showToast('Copied!');
+        setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '📋 Copy'; }, 2000);
+      });
+    }
+
+    function likeMsg(btn) {
+      btn.classList.toggle('liked');
+      btn.textContent = btn.classList.contains('liked') ? '👍 Liked' : '👍 Helpful';
+      if (btn.classList.contains('liked')) showToast('Glad it helped! 😊');
+    }
+
+    function dislikeMsg(btn) {
+      btn.classList.toggle('disliked');
+      btn.textContent = btn.classList.contains('disliked') ? '👎 Noted' : '👎 Not helpful';
+      if (btn.classList.contains('disliked')) showToast('Thanks for the feedback');
+    }
+
+    // ── TYPING ────────────────────────────────────
+    function showTyping() {
+      const wrap = document.createElement('div');
+      wrap.className = 'typing-wrap';
+      wrap.id = 'typing';
+      wrap.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div>`;
+      chatBox.appendChild(wrap);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function removeTyping() {
+      const t = document.getElementById('typing');
+      if (t) t.remove();
+    }
+
+    // ── SEND ──────────────────────────────────────
+    async function sendMessage() {
+      const message = input.value.trim();
+      if (!message) return;
+      if (!currentChatId) {
+        const res = await fetch('/chats/new', { method: 'POST' });
+        const data = await res.json();
+        currentChatId = data.id;
+      }
+      input.value = '';
+      renderMessage(message, 'user');
+      showTyping();
+
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, chatId: currentChatId })
+        });
+        const data = await res.json();
+        removeTyping();
+        renderMessage(data.reply, 'assistant');
+        await loadChatList();
+      } catch (err) {
+        removeTyping();
+        renderMessage('Something went wrong. Try again.', 'assistant');
+      }
+    }
+
+    // ── PLUS MENU ─────────────────────────────────
+    function togglePlusMenu() {
+      document.getElementById('plus-menu').classList.toggle('show');
+    }
+
+    function handleAttach(type) {
+      document.getElementById('plus-menu').classList.remove('show');
+      if (type === 'code') {
+        input.placeholder = 'Paste your code here...';
+        input.focus();
+        showToast('Paste your code and send! 💻');
+        return;
+      }
+      showToast('Coming soon! 🚀');
+    }
+
+    document.addEventListener('click', e => {
+      const menu = document.getElementById('plus-menu');
+      const plusBtn = document.getElementById('plus-btn');
+      if (menu && !menu.contains(e.target) && e.target !== plusBtn) {
+        menu.classList.remove('show');
+      }
+    });
+
+    // ── STT ───────────────────────────────────────
+    let recognition = null;
+    let isRecording = false;
+
+    function toggleSTT() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        showToast('Try Chrome for voice input! 🎤');
+        return;
+      }
+
+      if (isRecording) { recognition.stop(); return; }
+
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SR();
+      recognition.lang = 'en-IN';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      const micBtn = document.getElementById('mic-btn');
+
+      recognition.onstart = () => {
+        isRecording = true;
+        micBtn.classList.add('recording');
+        micBtn.textContent = '⏹️';
+        input.placeholder = 'Listening...';
+        showToast('Listening... speak now 🎤');
+      };
+
+      recognition.onresult = e => {
+        input.value = Array.from(e.results).map(r => r[0].transcript).join('');
+      };
+
+      recognition.onend = () => {
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        micBtn.textContent = '🎤';
+        input.placeholder = 'Message Astra...';
+        if (input.value.trim()) showToast('Got it! Press Send 😄');
+      };
+
+      recognition.onerror = () => {
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        micBtn.textContent = '🎤';
+        input.placeholder = 'Message Astra...';
+        showToast('Could not hear you, try again 🎤');
+      };
+
+      recognition.start();
+    }
+
+    // ── INIT ──────────────────────────────────────
+    (async () => {
+      await loadChatList();
+      await newChat();
+    })();
+  </script>
+</body>
+</html>
