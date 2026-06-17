@@ -103,7 +103,7 @@ app.post('/chat', async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-subscription-key': process.env.SARVAM_API_KEY
+        'api-subscription-key': process.env.SARVAM_API_KEY || 'your_actual_sarvam_key_here'
       },
       body: JSON.stringify({
         model: 'sarvam-105b',
