@@ -1,6 +1,7 @@
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config();
 }
+console.log('KEY:', process.env.SARVAM_API_KEY ? 'LOADED ✅' : 'MISSING ❌');
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
